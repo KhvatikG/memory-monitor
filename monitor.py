@@ -19,7 +19,9 @@ SLIP_TIME = 3
 
 
 class MemoryChecker:
-
+    """
+    Класс для мониторинга использования памяти и отправки уведомлений при превышении заданного порога.
+    """
     def __init__(
             self,
             endpoint: str,
@@ -48,8 +50,7 @@ class MemoryChecker:
             "mem_usage_percent": mem_usage_percent
         }
 
-        json_data = json.dumps(data)
-        response = requests.post(url=self.endpoint, json=json_data)
+        response = requests.post(url=self.endpoint, json=data)
 
         if response.status_code != 200:
             logging.critical(f'НЕУДАЛОСЬ ОТПРАВИТЬ! status = {response.status_code}')
@@ -68,18 +69,23 @@ class MemoryChecker:
             logging.warning(f'Лимит памяти превышен отправляю предупреждение на {self.endpoint}')
             self.send_memory_alarm(memory_usage_percent)
 
-    def start_memory_checking(self):
+    def start_memory_checking(self) -> None:
         """
         Проверяет память каждые self.memory_test_freq секунд с помощью self.check_memory
         и отправляет alarm POST запросом с помощью self.send_memory_alarm
         """
+        if not self.endpoint:
+           logging.error('Не указан endpoint для отправки alarm.')
+           return
         try:
             while True:
                 self.check_memory()
-                time.sleep(3)
+                time.sleep(self.memory_test_freq)
 
         except KeyboardInterrupt:
             logging.info('Завершено.')
+        except Exception as e:
+            logging.error(f'Произошла ошибка {e}')
 
 
 memory_checker = MemoryChecker(
